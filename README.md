@@ -7,7 +7,7 @@ A character-level **bigram language model** trained on ~32,000 first names, buil
 
 Both end up with almost the same table, which is the point. The neural version is the same idea that bigger language models scale up.
 
-### ▶ [Play with it: **The Name Machine**](https://p-niranjan-web.github.io/bigram-language-model/)
+### ▶ [Play with it: **The Name Machine**](https://nrjai.github.io/bigram-language-model/)
 
 A small, jargon-free web page where anyone can make up names, check how name-like a word is, and look at what letter the model expects next.
 
@@ -72,7 +72,7 @@ bigram-language-model/
 ## Run it yourself
 
 ```bash
-git clone https://github.com/p-niranjan-web/bigram-language-model.git
+git clone https://github.com/nrjai/bigram-language-model.git
 cd bigram-language-model
 python -m venv .venv
 # Windows: .venv\Scripts\activate     macOS/Linux: source .venv/bin/activate
