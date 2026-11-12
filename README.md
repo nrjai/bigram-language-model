@@ -9,7 +9,7 @@ Both end up with almost the same table, which is the point. The neural version i
 
 ### ▶ [Play with it: **The Name Machine**](https://nrjai.github.io/bigram-language-model/)
 
-A small, jargon-free web page where anyone can make up names, check how name-like a word is, and look at what letter the model expects next.
+A minimal terminal-style web page where anyone can make up names, check how name-like a word is, and look at what letter the model expects next.
 
 ![Bigram counts](assets/bigram_counts.png)
 

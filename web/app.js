@@ -7,18 +7,22 @@
   const REAL = new Set(M.names);
   const $ = (id) => document.getElementById(id);
 
+  const FULL = "█", EMPTY = "░";
+  const GREEN = "var(--green)", AMBER = "var(--amber)", RED = "var(--red)";
+
   let brain = "counting";
   const table = () => M.tables[brain];
 
   const NOTES = {
-    counting: "It went through every name and simply tallied which letter follows which.",
-    neural: "It started with random guesses and corrected itself 1,000 times, the way bigger AI models learn.",
+    counting: "count → tallied which letter follows which",
+    neural: "practice → random guesses, corrected 1,000 times",
   };
 
   // ---------- helpers ----------
   const clean = (s) => s.toLowerCase().replace(/[^a-z]/g, "");
-  const show = (ix) => (ix === 0 ? "end" : CHARS[ix]);
-  const quote = (c) => `“${c}”`;
+  const quote = (c) => `"${c}"`;
+  const bar = (k, width, color) =>
+    `<span style="color:${color}">${FULL.repeat(k)}</span><span style="color:#263026">${EMPTY.repeat(width - k)}</span>`;
 
   function pick(probs, temperature) {
     // Raise each chance to 1/temperature: low = play it safe, high = take risks.
@@ -71,12 +75,11 @@
     return (lo / arr.length) * 100;
   }
 
-  const chanceColor = (p) => (p >= 0.08 ? "var(--good)" : p >= 0.02 ? "var(--warn)" : "var(--bad)");
+  const chanceColor = (p) => (p >= 0.08 ? GREEN : p >= 0.02 ? AMBER : RED);
 
   function oneIn(p) {
     if (p >= 0.5) return "more often than not";
-    const n = Math.round(1 / p);
-    return `about 1 time in ${n.toLocaleString()}`;
+    return `~1 time in ${Math.round(1 / p).toLocaleString()}`;
   }
 
   // ---------- 1. make names ----------
@@ -86,29 +89,33 @@
   function wildLabel() {
     const v = +wild.value;
     $("wild-label").textContent =
-      v < 20 ? "Very sensible" : v < 40 ? "Sensible" : v <= 60 ? "Normal" : v < 80 ? "Wild" : "Chaotic";
+      v < 20 ? "very safe" : v < 40 ? "safe" : v <= 60 ? "normal" : v < 80 ? "wild" : "chaotic";
   }
 
   let kept = [];
   try { kept = JSON.parse(localStorage.getItem("kept-names") || "[]"); } catch (_) { kept = []; }
   const saveKept = () => { try { localStorage.setItem("kept-names", JSON.stringify(kept)); } catch (_) {} };
 
+  function toggleKept(n) {
+    kept = kept.includes(n) ? kept.filter((k) => k !== n) : [...kept, n];
+    saveKept(); renderKept(); syncKeptMarks();
+  }
+
   function renderKept() {
     $("kept-box").hidden = kept.length === 0;
-    $("kept").replaceChildren(...kept.map((n) => {
-      const li = document.createElement("li");
-      li.textContent = cap(n);
-      li.title = "Tap to remove";
-      li.onclick = () => { kept = kept.filter((k) => k !== n); saveKept(); renderKept(); syncKeptMarks(); };
-      return li;
+    $("kept").replaceChildren(...kept.map((n, i) => {
+      const s = document.createElement("span");
+      s.textContent = (i ? ", " : "") + n;
+      s.style.cursor = "pointer";
+      s.title = "tap to remove";
+      s.onclick = () => toggleKept(n);
+      return s;
     }));
   }
 
   function syncKeptMarks() {
     for (const li of $("made").children) li.classList.toggle("kept", kept.includes(li.dataset.name));
   }
-
-  const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
   function makeBatch() {
     const prefix = clean($("prefix").value);
@@ -123,8 +130,8 @@
     $("made").replaceChildren(...[...names].map((n, i) => {
       const li = document.createElement("li");
       li.dataset.name = n;
-      li.style.animationDelay = `${i * 35}ms`;
-      li.textContent = cap(n);
+      li.style.animationDelay = `${i * 40}ms`;
+      li.textContent = n;
       if (REAL.has(n)) {
         realCount++;
         const t = document.createElement("span");
@@ -132,28 +139,25 @@
         t.textContent = "real";
         li.append(t);
       }
-      li.title = "Tap to keep";
-      li.onclick = () => {
-        kept = kept.includes(n) ? kept.filter((k) => k !== n) : [...kept, n];
-        saveKept(); renderKept(); syncKeptMarks();
-      };
+      li.title = "tap to keep";
+      li.onclick = () => toggleKept(n);
       return li;
     }));
     syncKeptMarks();
     $("made-hint").textContent =
-      "Tap a name to keep it. " +
+      "// tap a name to keep it. " +
       (realCount
-        ? `${realCount === 1 ? "One is" : realCount + " are"} marked REAL: the machine stumbled onto a name that was already in its list.`
-        : "None of these are in its list of real names. It invented them all.");
+        ? `${realCount} marked real = already in its list, found by chance.`
+        : "none of these are in its list. all invented.");
   }
 
   // ---------- 2. score a name ----------
   const VERDICTS = [
-    [60, "\u{1F451}", "Absolutely a name"],
-    [30, "\u{1F60A}", "Sounds like a real name"],
-    [10, "\u{1F914}", "Unusual, but possible"],
-    [2, "\u{1F62C}", "Hmm, that's a stretch"],
-    [-1, "\u{1F92A}", "Keyboard smash!"],
+    [60, "NAME", "definitely a name", GREEN],
+    [30, "OK", "sounds like a real name", GREEN],
+    [10, "HMM", "unusual, but possible", AMBER],
+    [2, "ODD", "that's a stretch", AMBER],
+    [-1, "NOPE", "keyboard smash", RED],
   ];
 
   function scoreName() {
@@ -163,25 +167,25 @@
     box.hidden = false;
 
     const pct = percentile(avgLog(word));
-    const [, emoji, text] = VERDICTS.find(([min]) => pct > min);
-    $("verdict-emoji").textContent = emoji;
+    const [, tag, text, color] = VERDICTS.find(([min]) => pct > min);
+    $("verdict-emoji").textContent = tag;
+    $("verdict-emoji").style.background = color;
     $("verdict-text").textContent = text;
     const nice = Math.round(pct);
     $("verdict-sub").textContent =
-      (REAL.has(word) ? "It's in the list of real names. " : "") +
-      (nice >= 99 ? "More name-like than almost every real name."
-        : nice <= 0 ? "Less name-like than every single real name."
-        : `More name-like than ${nice}% of real names.`);
+      (nice >= 99 ? "more name-like than almost every real name"
+        : nice <= 0 ? "less name-like than every real name"
+        : `more name-like than ${nice}% of real names`) +
+      (REAL.has(word) ? " (it's in the list)" : "");
 
-    const fill = $("meter-fill");
-    fill.style.width = `${Math.max(3, pct)}%`;
-    fill.style.background = pct > 30 ? "var(--good)" : pct > 2 ? "var(--warn)" : "var(--bad)";
+    $("meter-fill").innerHTML = bar(Math.max(1, Math.round((pct / 100) * 30)), 30, color);
 
     const s = steps(word);
     $("letters").replaceChildren(...s.map(([from, to, p]) => {
       const span = document.createElement("span");
-      span.textContent = to === 0 ? "end" : to === undefined ? "?" : CHARS[to];
+      span.textContent = to === 0 ? "end" : CHARS[to];
       if (to === 0) span.className = "end";
+      else span.style.color = chanceColor(p);
       span.style.borderColor = chanceColor(p);
       span.title = describe(from, to, p);
       return span;
@@ -189,13 +193,13 @@
 
     const [from, to, p] = s.reduce((a, b) => (b[2] < a[2] ? b : a));
     $("weakest").textContent = p >= 0.08
-      ? "Every step looks natural to the machine. Green means common, red means rare."
-      : `The oddest part: ${describe(from, to, p)}. Green means common, red means rare.`;
+      ? "// every step looks natural. green = common, red = rare."
+      : `// oddest part: ${describe(from, to, p)}. green = common, red = rare.`;
   }
 
   function describe(from, to, p) {
-    if (from === 0) return `starting a name with ${quote(CHARS[to])} happens ${oneIn(p)}`;
-    if (to === 0) return `ending a name on ${quote(CHARS[from])} happens ${oneIn(p)}`;
+    if (from === 0) return `starting with ${quote(CHARS[to])} happens ${oneIn(p)}`;
+    if (to === 0) return `ending on ${quote(CHARS[from])} happens ${oneIn(p)}`;
     return `${quote(CHARS[to])} right after ${quote(CHARS[from])} happens ${oneIn(p)}`;
   }
 
@@ -203,40 +207,34 @@
   let current = 0;
 
   function buildKeys() {
-    const keys = CHARS.map((c, i) => {
+    $("keys").replaceChildren(...CHARS.map((c, i) => {
       const b = document.createElement("button");
-      b.textContent = i === 0 ? "Start" : c;
-      if (i === 0) b.className = "wide";
+      b.textContent = i === 0 ? "start" : c;
       b.setAttribute("aria-pressed", String(i === current));
       b.onclick = () => { current = i; showNext(); };
       return b;
-    });
-    $("keys").replaceChildren(...keys);
+    }));
   }
 
   function showNext() {
     [...$("keys").children].forEach((b, i) => b.setAttribute("aria-pressed", String(i === current)));
     $("next-title").textContent = current === 0
-      ? "Names usually start with…"
-      : `After ${quote(CHARS[current])}, the machine usually picks…`;
+      ? "// names usually start with:"
+      : `// after ${quote(CHARS[current])}, it usually picks:`;
     const row = table()[current].map((p, i) => [i, p]).sort((a, b) => b[1] - a[1]).slice(0, 8);
     const top = row[0][1];
-    $("bars").replaceChildren(...row.map(([i, p]) => {
-      const d = document.createElement("div");
-      d.className = "bar";
-      d.innerHTML =
-        `<span class="lab${i === 0 ? " end" : ""}">${i === 0 ? "(stop)" : CHARS[i]}</span>` +
-        `<span class="track"><span class="fill"></span></span>` +
-        `<span class="pct">${p >= 0.01 ? Math.round(p * 100) + "%" : "<1%"}</span>`;
-      requestAnimationFrame(() => { d.querySelector(".fill").style.width = `${(p / top) * 100}%`; });
-      return d;
-    }));
+    const W = 32;
+    $("bars").innerHTML = row.map(([i, p]) => {
+      const lab = (i === 0 ? "stop" : CHARS[i]).padStart(5);
+      const pct = (p >= 0.01 ? Math.round(p * 100) + "%" : "<1%").padStart(5);
+      return `${lab}  ${bar(Math.max(1, Math.round((p / top) * W)), W, GREEN)} ${pct}`;
+    }).join("\n");
   }
 
-  // ---------- brain switch ----------
+  // ---------- mode switch ----------
   function setBrain(b) {
     brain = b;
-    document.querySelectorAll(".brain-switch button").forEach((btn) =>
+    document.querySelectorAll(".mode button").forEach((btn) =>
       btn.setAttribute("aria-checked", String(btn.dataset.brain === b)));
     $("brain-note").textContent = NOTES[b];
     scoreName();
@@ -245,7 +243,7 @@
 
   // ---------- wire up ----------
   $("name-count").textContent = M.names.length.toLocaleString();
-  document.querySelectorAll(".brain-switch button").forEach((btn) => (btn.onclick = () => setBrain(btn.dataset.brain)));
+  document.querySelectorAll(".mode button").forEach((btn) => (btn.onclick = () => setBrain(btn.dataset.brain)));
   wild.addEventListener("input", wildLabel);
   $("make-btn").addEventListener("click", makeBatch);
   $("prefix").addEventListener("keydown", (e) => { if (e.key === "Enter") makeBatch(); });
