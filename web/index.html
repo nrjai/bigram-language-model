@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Name Machine</title>
+  <meta name="description" content="A tiny machine that read 32,000 names and now makes up its own. Built from a bigram language model.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <p class="eyebrow">a tiny language model</p>
+      <h1>The Name Machine</h1>
+      <p class="lede">It read <strong id="name-count">32,000</strong> real names. Now it makes up its own.
+        It only remembers <em>one letter at a time</em>, so some come out lovely and some come out ridiculous.</p>
+
+      <div class="brain-switch" role="radiogroup" aria-label="How the machine learned">
+        <span class="switch-label">How it learned:</span>
+        <button role="radio" aria-checked="true" data-brain="counting">By counting</button>
+        <button role="radio" aria-checked="false" data-brain="neural">By practice</button>
+      </div>
+      <p class="brain-note" id="brain-note"></p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- 1. Make names -->
+    <section class="card" id="make">
+      <div class="card-head">
+        <span class="step">1</span>
+        <div>
+          <h2>Make up some names</h2>
+          <p class="hint">Press the button. Each name is built letter by letter.</p>
+        </div>
+      </div>
+
+      <div class="controls">
+        <label class="field">
+          <span>Start with <small>(optional)</small></span>
+          <input id="prefix" type="text" maxlength="8" placeholder="e.g. ja" autocomplete="off" spellcheck="false">
+        </label>
+        <label class="field grow">
+          <span>Wildness: <b id="wild-label">Normal</b></span>
+          <input id="wildness" type="range" min="0" max="100" value="50">
+          <span class="range-ends"><small>Sensible</small><small>Chaotic</small></span>
+        </label>
+        <button id="make-btn" class="big-btn">Make 12 names</button>
+      </div>
+
+      <ul id="made" class="chips" aria-live="polite"></ul>
+      <p class="hint small" id="made-hint"></p>
+
+      <div id="kept-box" class="kept" hidden>
+        <h3>Names you kept</h3>
+        <ul id="kept" class="chips small"></ul>
+        <button id="clear-kept" class="link-btn">Clear</button>
+      </div>
+    </section>
+
+    <!-- 2. Score a name -->
+    <section class="card" id="score">
+      <div class="card-head">
+        <span class="step">2</span>
+        <div>
+          <h2>Does it sound like a name?</h2>
+          <p class="hint">Type anything: your name, a pet's name, a keyboard smash.</p>
+        </div>
+      </div>
+
+      <input id="test-name" class="big-input" type="text" maxlength="24" placeholder="Type a name…" autocomplete="off" spellcheck="false">
+
+      <div id="verdict" class="verdict" hidden>
+        <div class="verdict-top">
+          <span id="verdict-emoji" class="verdict-emoji" aria-hidden="true"></span>
+          <div>
+            <p id="verdict-text" class="verdict-text"></p>
+            <p id="verdict-sub" class="hint"></p>
+          </div>
+        </div>
+        <div class="meter" aria-hidden="true"><div id="meter-fill"></div></div>
+        <div class="meter-ends"><small>Keyboard smash</small><small>Very name-like</small></div>
+        <div id="letters" class="letters"></div>
+        <p id="weakest" class="hint"></p>
+      </div>
+    </section>
+
+    <!-- 3. What comes next -->
+    <section class="card" id="next">
+      <div class="card-head">
+        <span class="step">3</span>
+        <div>
+          <h2>Peek inside its memory</h2>
+          <p class="hint">Pick a letter to see what the machine thinks usually comes next.</p>
+        </div>
+      </div>
+
+      <div id="keys" class="keys"></div>
+      <p id="next-title" class="next-title"></p>
+      <div id="bars" class="bars"></div>
+    </section>
+
+    <section class="card how">
+      <details>
+        <summary>How does it actually work?</summary>
+        <ol>
+          <li><b>It reads.</b> It goes through a list of about 32,000 real first names.</li>
+          <li><b>It notices pairs.</b> For every letter, it keeps track of which letter came right after it,
+            and how often. After <q>q</q> it nearly always sees <q>u</q>. Names often end after <q>a</q> or <q>n</q>.</li>
+          <li><b>It makes names.</b> To make a new name, it picks a first letter the way real names do,
+            then keeps picking each next letter based only on the one before it, until it decides to stop.</li>
+          <li><b>That's the whole trick.</b> It has no idea what came two letters back. That's why you get
+            things like <q>staiyaubrtthrigotai</q>. Big AI models work on the same idea, only they look much
+            further back and have learned from far more text.</li>
+        </ol>
+        <p><b>By counting</b> means the machine literally tallied the pairs.
+          <b>By practice</b> means it started with random guesses and slowly corrected itself,
+          a thousand times over, which is how bigger AI models learn. Both end up with almost
+          exactly the same memory. Flip the switch at the top and compare.</p>
+      </details>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <p>Built from a <a href="https://github.com/p-niranjan-web/bigram-language-model">bigram language model</a> in PyTorch.
+      Names list from Andrej Karpathy's <a href="https://github.com/karpathy/makemore">makemore</a>.</p>
+  </footer>
+
+  <script src="model.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
