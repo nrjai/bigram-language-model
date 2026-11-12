@@ -1,14 +1,22 @@
 (() => {
   "use strict";
 
-  const M = window.BIGRAM;
-  const CHARS = M.chars;                         // ['.', 'a', ..., 'z']; '.' = start/end
-  const IDX = Object.fromEntries(CHARS.map((c, i) => [c, i]));
-  const REAL = new Set(M.names);
+  const DATASETS = window.BIGRAM.datasets;      // { indian: {...}, english: {...} }
   const $ = (id) => document.getElementById(id);
 
   const FULL = "█", EMPTY = "░";
   const GREEN = "var(--green)", AMBER = "var(--amber)", RED = "var(--red)";
+
+  // Current name list. CHARS = ['.', 'a', ..., 'z'] where '.' = start/end.
+  let ds, M, CHARS, IDX, REAL;
+  function loadDataset(key) {
+    ds = key;
+    M = DATASETS[key];
+    CHARS = M.chars;
+    IDX = Object.fromEntries(CHARS.map((c, i) => [c, i]));
+    REAL = new Set(M.names);
+  }
+  loadDataset("indian");
 
   let brain = "counting";
   const table = () => M.tables[brain];
@@ -65,8 +73,9 @@
   // as "more name-like than X% of real names" instead of a raw number.
   const realScores = {};
   function percentile(score) {
-    if (!realScores[brain]) realScores[brain] = Float64Array.from(M.names.map(avgLog)).sort();
-    const arr = realScores[brain];
+    const key = ds + ":" + brain;
+    if (!realScores[key]) realScores[key] = Float64Array.from(M.names.map(avgLog)).sort();
+    const arr = realScores[key];
     let lo = 0, hi = arr.length;
     while (lo < hi) {
       const mid = (lo + hi) >> 1;
@@ -241,18 +250,33 @@
     showNext();
   }
 
+  // ---------- name list switch ----------
+  function setDataset(key) {
+    loadDataset(key);
+    document.querySelectorAll(".lists button").forEach((btn) =>
+      btn.setAttribute("aria-checked", String(btn.dataset.ds === key)));
+    $("name-count").textContent = M.names.length.toLocaleString();
+    $("ds-label").textContent = key;
+    try { localStorage.setItem("name-list", key); } catch (_) {}
+    buildKeys();
+    scoreName();
+    showNext();
+    makeBatch();
+  }
+
   // ---------- wire up ----------
-  $("name-count").textContent = M.names.length.toLocaleString();
   document.querySelectorAll(".mode button").forEach((btn) => (btn.onclick = () => setBrain(btn.dataset.brain)));
+  document.querySelectorAll(".lists button").forEach((btn) => (btn.onclick = () => setDataset(btn.dataset.ds)));
   wild.addEventListener("input", wildLabel);
   $("make-btn").addEventListener("click", makeBatch);
   $("prefix").addEventListener("keydown", (e) => { if (e.key === "Enter") makeBatch(); });
   $("test-name").addEventListener("input", scoreName);
   $("clear-kept").addEventListener("click", () => { kept = []; saveKept(); renderKept(); syncKeptMarks(); });
 
-  buildKeys();
+  let startList = "indian";
+  try { const saved = localStorage.getItem("name-list"); if (saved && DATASETS[saved]) startList = saved; } catch (_) {}
   wildLabel();
   renderKept();
-  setBrain("counting");
-  makeBatch();
+  $("brain-note").textContent = NOTES[brain];
+  setDataset(startList);
 })();

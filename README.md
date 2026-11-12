@@ -1,6 +1,6 @@
 # Bigram Language Model
 
-A character-level **bigram language model** trained on ~32,000 first names, built two ways in PyTorch:
+A character-level **bigram language model** trained on first names (**6,804 Indian names** and **32,033 English names**), built two ways in PyTorch:
 
 1. **Counting.** Tally every pair of adjacent characters into a 27×27 table, smooth it, and normalise each row into probabilities.
 2. **Neural net.** One linear layer (one-hot input → 27 logits → softmax), trained by gradient descent on negative log-likelihood.
@@ -9,13 +9,43 @@ Both end up with almost the same table, which is the point. The neural version i
 
 ### ▶ [Play with it: **The Name Machine**](https://nrjai.github.io/bigram-language-model/)
 
-A minimal terminal-style web page where anyone can make up names, check how name-like a word is, and look at what letter the model expects next.
+A minimal terminal-style web page where anyone can switch between Indian and English names, make up new ones, check how name-like a word is, and look at what letter the model expects next.
 
-![Bigram counts](assets/bigram_counts.png)
+![Bigram counts, Indian names](assets/indian_bigram_counts.png)
 
 ---
 
 ## Results
+
+### Indian names (6,804)
+
+| model | average NLL | what that means |
+|---|---|---|
+| uniform guess (1/27) | 3.2958 | knows nothing |
+| **counting** (add-1 smoothing) | **2.3601** | |
+| **neural net** (1,000 steps, lr 50) | **2.3584** | slightly *better* than counting |
+
+On this smaller list the neural net edges out counting: add-1 smoothing is a heavier nudge when there is less
+data, while the unregularised net fits the raw frequencies more closely. Correlation between the two tables: **0.990451**.
+
+![Counting vs neural, Indian](assets/indian_counting_vs_neural.png)
+
+Sample names (counting model, seed `2147483647`):
+
+```
+deeba
+momakuraropritahamvinimjanainjakadk
+ka
+da
+samitabhjabhr
+gotashishi
+dhavu
+ka
+teda
+ka
+```
+
+### English names (32,033, the original makemore list)
 
 | model | average NLL on the training names | what that means |
 |---|---|---|
@@ -56,7 +86,9 @@ bigram-language-model/
 │   ├── counting.py         #   approach 1: count table + smoothing
 │   ├── neural.py           #   approach 2: one-layer net + gradient descent
 │   └── sampling.py         #   generate names, compute NLL
-├── scripts/train.py        # trains both, prints results, exports web/model.js
+├── scripts/
+│   ├── train.py            # trains both models on both lists, exports web/model.js
+│   └── build_indian_names.py   # downloads + cleans the Indian names list
 ├── notebooks/
 │   └── makemore_bigram.ipynb   # the original step-by-step notebook
 ├── web/                    # The Name Machine (static, no build step)
@@ -64,7 +96,9 @@ bigram-language-model/
 │   ├── app.js
 │   ├── style.css
 │   └── model.js            # generated: both probability tables + the names list
-├── data/names.txt          # 32k names, one per line
+├── data/
+│   ├── indian_names.txt    # 6.8k Indian first names (built by scripts/build_indian_names.py)
+│   └── names.txt           # 32k English names, one per line
 ├── assets/                 # charts used in this README
 └── tests/test_bigram.py
 ```
@@ -112,7 +146,11 @@ is renormalised.
 ## Credits
 
 Follows Andrej Karpathy's [makemore](https://github.com/karpathy/makemore) lecture series
-(Neural Networks: Zero to Hero). The `names.txt` dataset comes from that repo (MIT).
+(Neural Networks: Zero to Hero). The English `names.txt` comes from that repo (MIT).
+The Indian list is built from mbejda's public
+[male](https://gist.github.com/mbejda/7f86ca901fe41bc14a63) and
+[female](https://gist.github.com/mbejda/9b93c7545c9dd93060bd) Indian name lists (collected from public
+records), cleaned to unique first names with titles such as "smt" and "km" removed.
 
 ## License
 

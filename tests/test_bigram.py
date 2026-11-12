@@ -54,3 +54,13 @@ def test_full_dataset_matches_notebook_loss():
     assert len(words) == 32033
     assert len(v) == 27
     assert nll(CountingBigram(v).fit(words).probs(), v, words) == pytest.approx(2.4544, abs=1e-3)
+
+
+@pytest.mark.skipif(not (ROOT / "data" / "indian_names.txt").exists(), reason="dataset missing")
+def test_indian_names_are_clean():
+    words = load_words(ROOT / "data" / "indian_names.txt")
+    assert len(words) > 5000
+    assert len(set(words)) == len(words)
+    assert all(w.isalpha() and w.isascii() and 3 <= len(w) <= 15 for w in words)
+    assert not {"smt", "km", "mohd"} & set(words)
+    assert len(Vocab(words)) == 27

@@ -15,7 +15,11 @@
     <div class="titlebar">
       <span class="dots"><i></i><i></i><i></i></span>
       <span class="title">name-machine — ~/bigram</span>
-      <span class="mode" role="radiogroup" aria-label="How the machine learned">
+      <span class="seg lists" role="radiogroup" aria-label="Which names it learned from">
+        <button role="radio" aria-checked="true" data-ds="indian">indian</button>
+        <button role="radio" aria-checked="false" data-ds="english">english</button>
+      </span>
+      <span class="seg mode" role="radiogroup" aria-label="How the machine learned">
         <button role="radio" aria-checked="true" data-brain="counting">count</button>
         <button role="radio" aria-checked="false" data-brain="neural">practice</button>
       </span>
@@ -23,7 +27,7 @@
 
     <main class="screen">
       <h1 class="banner"><span class="ps">&gt;</span>name_machine<span class="cursor"></span></h1>
-      <p class="dim"># read <span id="name-count">32,033</span> real names. now it makes up its own.<br>
+      <p class="dim"># read <span id="name-count">6,804</span> real <span id="ds-label" class="hl">indian</span> names. now it makes up its own.<br>
         # it only remembers ONE letter at a time, so expect some nonsense.</p>
       <p class="dim"># mode: <span id="brain-note" class="hl"></span></p>
 
@@ -64,12 +68,12 @@
       <section class="how">
         <details>
           <summary><span class="ps">$</span> cat how-it-works.txt</summary>
-          <pre class="txt">1. it reads ~32,000 real first names.
+          <pre class="txt">1. it reads a list of real first names (indian or english, switch at the top).
 2. for every letter, it notes which letter came right after it, and how often.
-   after "q" it nearly always sees "u". names often end after "a" or "n".
+   in indian names, "s" is followed by "h" almost half the time. most names end on "a" or "i".
 3. to make a name: pick a first letter the way real names do, then keep
    picking the next letter based ONLY on the one before, until it stops.
-4. that's it. it has no idea what came two letters back, hence "staiyaubrtthrigotai".
+4. that's it. it has no idea what came two letters back, hence "samitabhjabhr".
    big AI models use the same idea, but look much further back.
 
 mode count    = it literally tallied the pairs.
@@ -79,7 +83,8 @@ mode practice = it started with random guesses and corrected itself 1,000 times,
       </section>
 
       <p class="dim small foot">// source: <a href="https://github.com/nrjai/bigram-language-model">github.com/nrjai/bigram-language-model</a>
-        · names list from karpathy/<a href="https://github.com/karpathy/makemore">makemore</a></p>
+        · indian names: <a href="https://gist.github.com/mbejda/7f86ca901fe41bc14a63">mbejda</a> lists, cleaned
+        · english names: karpathy/<a href="https://github.com/karpathy/makemore">makemore</a></p>
     </main>
   </div>
 
